@@ -4,6 +4,7 @@
 #define BUFFER_LENGTH	256
 #define NAME_LENGTH		48
 #define MODE_LENGTH		36
+#define MODE_TYPE              64
 #define TYPE_LENGTH		12
 #define MAX_NODE		10
 
@@ -15,6 +16,7 @@ enum {
 struct displaynode {
 	char path[BUFFER_LENGTH];
 	char mode[MODE_LENGTH];
+	char *modes[MODE_TYPE];
 	char name[NAME_LENGTH];
 	int type;
 	int property;
@@ -54,6 +56,7 @@ class DisplayManager {
 		int 	operateIfaceEnable(struct displaynode *node, int operate);
 		int		readIfaceConnect(struct displaynode *node);
 		int		operateIfaceMode(struct displaynode *node, int type, char *mode);
+		int		readIfaceModes(struct displaynode *node);
 		void	display_list_add(struct displaynode *node);
 		const char*	type2string(int type);
 		int 	string2type(const char *str);
