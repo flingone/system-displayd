@@ -114,7 +114,7 @@ void DisplayManager::init() {
 	for(node = main_display_list; node != NULL; node = node->next) {
 		if(node->enable == 1)
 		{
-			operateIfaceMode(node, DISPLAY_OPERATE_WRITE, node->modes[0]);
+			operateIfaceMode(node, DISPLAY_OPERATE_WRITE, node->mode);
 			found = 1;
 		}
 		operateIfaceEnable(node, DISPLAY_OPERATE_WRITE);
@@ -147,7 +147,7 @@ void DisplayManager::init() {
 	for(node = aux_display_list; node != NULL; node = node->next) {
 		if(node->enable == 1)
 		{
-			operateIfaceMode(node, DISPLAY_OPERATE_WRITE, node->modes[0]);
+			operateIfaceMode(node, DISPLAY_OPERATE_WRITE, node->mode);
 			found = 1;
 		}
 		operateIfaceEnable(node, DISPLAY_OPERATE_WRITE);
@@ -328,37 +328,6 @@ int	DisplayManager::operateIfaceMode(struct displaynode *node, int type, char *m
 	return 0;
 }
 
-int    DisplayManager::readIfaceModes(struct displaynode *node) {
-	FILE *fd = NULL;
-	int j = 0;
-	char buf[BUFFER_LENGTH];
-	// Read modes;
-	memset(buf, 0, BUFFER_LENGTH);
-	strcpy(buf, node->path);
-	strcat(buf, "/modes");
-	fd = fopen(buf, "r");
-	memset(buf, 0, BUFFER_LENGTH);
-	while((fgets(buf, MODE_LENGTH, fd) != NULL) && (j < MODE_TYPE)) {
-	if(strlen(buf)) {
-		ALOGD("%s", buf);
-		//There is a '\n' at last char, should be delelted.
-		buf[strlen(buf) - 1] = 0;
-		if(node->modes[j] == NULL) {
-		node->modes[j] = (char*)malloc(MODE_LENGTH);
-		if(node->modes[j] == NULL) {
-		ALOGE("[%s] Cannot malloc memory for node->mode!!", __FUNCTION__);
-			return -1;
-		}
-		}
-		memset(node->modes[j], 0, MODE_LENGTH);
-		memcpy(node->modes[j], buf, strlen(buf));
-		j++;
-	}
-	memset(buf, 0, BUFFER_LENGTH);
-	}
-	fclose(fd);
-	return 0;
-}
 void DisplayManager::display_list_add(struct displaynode *node)
 {
 	struct displaynode *head = NULL, *pos;
@@ -489,8 +458,6 @@ int DisplayManager::readSysfs(void) {
 		
 		// Read mode;
 		operateIfaceMode(node, DISPLAY_OPERATE_READ, node->mode);
-                // Read modes
-                readIfaceModes(node);
 		
 		display_list_add(node);
 
@@ -508,12 +475,12 @@ void DisplayManager::saveConfig(void) {
 	fd = fopen(DISPLAY_CONFIG_FILE, "w");
 	for(node = main_display_list; node != NULL; node = node->next) {
 		memset(buf, 0 , BUFFER_LENGTH);
-		sprintf(buf, "display=%d,iface=%d,enable=%d,mode=%s\n", node->property, node->type, node->enable, node->modes[0]);
+		sprintf(buf, "display=%d,iface=%d,enable=%d,mode=%s\n", node->property, node->type, node->enable, node->mode);
 		fwrite(buf, 1, strlen(buf), fd);
 	}
 	for(node = aux_display_list; node != NULL; node = node->next) {
 		memset(buf, 0 , BUFFER_LENGTH);
-		sprintf(buf, "display=%d,iface=%d,enable=%d,mode=%s\n", node->property, node->type, node->enable, node->modes[0]);
+		sprintf(buf, "display=%d,iface=%d,enable=%d,mode=%s\n", node->property, node->type, node->enable, node->mode);
 		fwrite(buf, 1, strlen(buf), fd);
 	}
 	fclose(fd);
@@ -825,7 +792,6 @@ void DisplayManager::setHDMIEnable(int display) {
 	
 	for(node = head; node != NULL; node = node->next) {
 		if(node->type == DISPLAY_INTERFACE_HDMI) {
-			readIfaceModes(node);
 			iface_hdmi = node;
 		}
 		if(node->enable == 1) {
@@ -834,7 +800,7 @@ void DisplayManager::setHDMIEnable(int display) {
 	}
 	readIfaceConnect(iface_hdmi);
 	if(iface_hdmi == iface_enabled && iface_hdmi != NULL) {
-		operateIfaceMode(iface_hdmi, DISPLAY_OPERATE_WRITE, iface_hdmi->modes[0]);
+		operateIfaceMode(iface_hdmi, DISPLAY_OPERATE_WRITE, iface_hdmi->mode);
 		iface_hdmi->enable = 1;
 		operateIfaceEnable(iface_hdmi, DISPLAY_OPERATE_WRITE);
 	}
@@ -844,7 +810,7 @@ void DisplayManager::setHDMIEnable(int display) {
 			iface_enabled->enable = 0;
 			operateIfaceEnable(iface_enabled, DISPLAY_OPERATE_WRITE);
 			iface_hdmi->enable = 1;
-			operateIfaceMode(iface_hdmi, DISPLAY_OPERATE_WRITE, iface_hdmi->modes[0]);
+			operateIfaceMode(iface_hdmi, DISPLAY_OPERATE_WRITE, iface_hdmi->mode);
 			operateIfaceEnable(iface_hdmi, DISPLAY_OPERATE_WRITE);
 		}
 	}
